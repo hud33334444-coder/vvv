@@ -7,21 +7,12 @@ from aiogram.fsm.context import FSMContext
 
 
 from database.db import session
+from utils.rqs import send_request
 from utils.states import DialogStates
 from utils.keyboard import get_main_keyboard
 from database.repo import UserRepository
 
 user = Router()
-
-
-@user.message(CommandStart())
-async def hello(message: Message):
-    r = UserRepository(session())
-    user = await r.select(message.from_user.id)  # type: ignore
-    if not user:
-        await r.create(message.from_user.id, message.from_user.username)  # type: ignore
-    await r.close()
-    await message.answer("Приветствую в нашем боте ИИ!")
 
 
 @user.message(CommandStart())
@@ -43,12 +34,19 @@ async def test(message: Message, state: FSMContext):
         "Диалог начат! Напишите сообщение (кроме кнопок).",
         reply_markup=get_main_keyboard(),
     )
+    await state.set_state(DialogStates.chatting)
 
 
 @user.message(F.text == "⏹️ Закончить диалог")
 async def end_dialog(message: Message, state: FSMContext):
-    await state.clear()
     await message.answer("Диалог завершен", reply_markup=get_main_keyboard())
+    await state.clear()
+
+
+@user.message(DialogStates.chatting)
+async def dialog(message: Message):
+    response = await send_request(message.text)
+    await message.answer(response)
 
 
 @user.message(F.text == "👤 Профиль")
