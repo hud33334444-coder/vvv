@@ -11,6 +11,7 @@ from utils.rqs import send_request
 from utils.states import DialogStates
 from utils.keyboard import get_main_keyboard
 from database.repo import UserRepository
+from utils.rqs import History
 
 user = Router()
 
